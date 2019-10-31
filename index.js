@@ -1,4 +1,4 @@
-import React from "react"
+drawerOffsetimport React from "react"
 import {
   Animated,
   Dimensions,
@@ -19,7 +19,7 @@ const VERSION = parseInt(Platform.Version, 10)
 class MenuDrawer extends React.Component {
   constructor(props) {
     super(props)
-    this.leftOffset = new Animated.Value(0)
+    this.drawerOffset = new Animated.Value(0)
     this.state = {
       expanded: false,
       fadeAnim: new Animated.Value(1)
@@ -31,7 +31,7 @@ class MenuDrawer extends React.Component {
     const DRAWER_WIDTH = SCREEN_WIDTH * (drawerPercentage / 100)
 
     Animated.parallel([
-      Animated.timing(this.leftOffset, {
+      Animated.timing(this.drawerOffset, {
         toValue: DRAWER_WIDTH,
         duration: animationTime,
         useNativeDriver: true
@@ -48,7 +48,7 @@ class MenuDrawer extends React.Component {
     const { animationTime } = this.props
 
     Animated.parallel([
-      Animated.timing(this.leftOffset, {
+      Animated.timing(this.drawerOffset, {
         toValue: 0,
         duration: animationTime,
         useNativeDriver: true
@@ -76,14 +76,15 @@ class MenuDrawer extends React.Component {
   }
 
   renderPush = () => {
-    const { children, drawerContent, drawerPercentage } = this.props
+    const { children, drawerContent, drawerPercentage, direction, open } = this.props
     const { fadeAnim } = this.state
-    const animated = { transform: [{ translateX: this.leftOffset }] }
+    const animated = { transform: [{ translateX: this.drawerOffset }] }
     const DRAWER_WIDTH = SCREEN_WIDTH * (drawerPercentage / 100)
+    const left = direction !== 'right';
 
     if (isIOS && VERSION >= 11) {
       return (
-        <Animated.View style={[animated, styles.main]}>
+        <Animated.View style={[animated, styles.main, left ? styles.left : styles.right]}>
           <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
             <View
               style={[
@@ -99,12 +100,15 @@ class MenuDrawer extends React.Component {
             <Animated.View
               style={[
                 styles.container,
+                left ? styles.left : styles.right,
                 {
                   opacity: fadeAnim
                 }
               ]}
             >
-              {children}
+              <TouchableOpacity disabled={!open}>
+                {children}
+              </TouchableOpacity>
             </Animated.View>
           </SafeAreaView>
         </Animated.View>
@@ -112,7 +116,7 @@ class MenuDrawer extends React.Component {
     }
 
     return (
-      <Animated.View style={[animated, styles.main, { width: SCREEN_WIDTH + DRAWER_WIDTH }]}>
+      <Animated.View style={[animated, styles.main, left ? styles.left : styles.right, { width: SCREEN_WIDTH + DRAWER_WIDTH }]}>
         <View
           style={[
             styles.drawer,
@@ -127,32 +131,37 @@ class MenuDrawer extends React.Component {
         <Animated.View
           style={[
             styles.container,
+            left ? styles.left : styles.right,
             {
               opacity: fadeAnim
             }
           ]}
         >
-          {children}
+          <TouchableOpacity disabled={!open}>
+            {children}
+          </TouchableOpacity>
         </Animated.View>
       </Animated.View>
     )
   }
 
   renderOverlay = () => {
-    const { children, drawerContent, drawerPercentage } = this.props
+    const { children, drawerContent, drawerPercentage, direction } = this.props
     const { fadeAnim } = this.state
-    const animated = { transform: [{ translateX: this.leftOffset }] }
+    const animated = { transform: [{ translateX: this.drawerOffset }] }
     const DRAWER_WIDTH = SCREEN_WIDTH * (drawerPercentage / 100)
+    const left = direction !== 'right';
 
     if (isIOS && VERSION >= 11) {
       return (
-        <SafeAreaView style={[styles.main]}>
+        <SafeAreaView style={[styles.main, left ? styles.left : styles.right]}>
           <Animated.View
-            style={[animated, styles.drawer, { width: DRAWER_WIDTH, left: -DRAWER_WIDTH }]}
+            style={[animated, styles.drawer, { width: DRAWER_WIDTH }, left ? { left: -DRAWER_WIDTH } : { right: -DRAWER_WIDTH }]}
           >
             {drawerContent ? drawerContent : this.drawerFallback()}
           </Animated.View>
-          <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+          <Animated.View style={[styles.container, left ? styles.left : styles.right, { opacity: fadeAnim }]}>
+
             {children}
           </Animated.View>
         </SafeAreaView>
@@ -160,15 +169,15 @@ class MenuDrawer extends React.Component {
     }
 
     return (
-      <View style={styles.main}>
+      <View style={[styles.main, left ? styles.left : styles.right]}>
         <Animated.View
           style={[
             animated,
             styles.drawer,
             {
-              width: DRAWER_WIDTH,
-              left: -DRAWER_WIDTH
-            }
+              width: DRAWER_WIDTH
+            },
+            left ? { left: -DRAWER_WIDTH } : { right: -DRAWER_WIDTH }
           ]}
         >
           {drawerContent ? drawerContent : this.drawerFallback()}
@@ -176,6 +185,7 @@ class MenuDrawer extends React.Component {
         <Animated.View
           style={[
             styles.container,
+            left ? styles.left : styles.right,
             {
               opacity: fadeAnim
             }
@@ -213,8 +223,13 @@ MenuDrawer.propTypes = {
 const styles = StyleSheet.create({
   main: {
     position: "absolute",
-    left: 0,
     top: 5
+  },
+  left: {
+    left: 0,
+  },
+  right: {
+    right: 0
   },
   container: {
     position: "absolute",
